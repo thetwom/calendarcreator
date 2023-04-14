@@ -39,6 +39,7 @@ class CalendarCreator:
         self.titlepic = None
         self.titlepos = None
         self.titleanchor = "center"
+        self.titleopacity = 0.7
         self.footerheight = 2.0
         self.shiftdict = {}
         self.footer_over_pic = False # overlay footer over picture
@@ -101,11 +102,12 @@ class CalendarCreator:
             exit(1)
         self.legends = legends
 
-    def set_title(self, title=None,pic=None,pos=None,anchor="center"):
+    def set_title(self, title=None,pic=None,pos=None,anchor="center",opacity=0.7):
         self.title = title
         self.titlepic = pic
         self.titlepos = pos
         self.titleanchor = anchor
+        self.titleopacity = opacity
 
     def set_page_size(self, width, height):
         self.page_width = width
@@ -524,12 +526,21 @@ class CalendarCreator:
             elif type(pics) is not list:
                 f.write(self.get_pic(pics, [self.page_width/2.0,self.page_height-pic_height/2.0], self.page_width, pic_height, self.leftmargin, self.rightmargin, self.topmargin, bottommargin, shifts))
 
-            ## Two pictures, with first entry must be "vertical" or "horizontal"
-            elif len(pics) == 3 and "vertical" in pics:
-                # left pic
-                f.write(self.get_pic(pics_optionless[0], [self.page_width/4.0,self.page_height-pic_height/2.0], self.page_width/2.0, pic_height, self.leftmargin, self.overlap, self.topmargin, bottommargin, shifts[0]))
-                # right pic
-                f.write(self.get_pic(pics_optionless[1], [3.0*self.page_width/4.0,self.page_height-pic_height/2.0], self.page_width/2.0, pic_height, 0.0, self.rightmargin,self.topmargin, bottommargin, shifts[1]))
+            elif "vertical" in pics:
+                num_pics = len(pics_optionless)
+                pic_width = self.page_width / num_pics
+                for i in range(num_pics):
+                    if i == 0:
+                        left_margin_pic = self.leftmargin
+                    else:
+                        left_margin_pic = 0.0
+
+                    if i == num_pics - 1:
+                        right_margin_pic = self.rightmargin
+                    else:
+                        right_margin_pic = self.overlap
+
+                    f.write(self.get_pic(pics_optionless[i], [pic_width * (i + 0.5), self.page_height-pic_height/2.0], pic_width, pic_height, left_margin_pic, right_margin_pic, self.topmargin, bottommargin, shifts[i]))
 
             elif len(pics) == 3 and "horizontal" in pics:
                 # top pic
@@ -622,8 +633,8 @@ class CalendarCreator:
                                      self.leftmargin, self.rightmargin, self.topmargin, 0,
                                      self.get_shift(self.titlepic)))
 
-            f.write(r"\node at ({},{}) [anchor={},font=\scshape,color=title,scale=4,inner sep=0, outer sep=0,align=center, text opacity=0.7] {{{}}};".format(
-                self.titlepos[0], self.titlepos[1], self.titleanchor, tname) + "\n\n")
+            f.write(r"\node at ({},{}) [anchor={},font=\scshape,color=title,scale=4,inner sep=0, outer sep=0,align=center, text opacity={}] {{{}}};".format(
+                self.titlepos[0], self.titlepos[1], self.titleanchor, self.titleopacity, tname) + "\n\n")
             #f.write(r"\node at ({},{}) [anchor=south east,font=\scshape,color=month!70,scale=4,inner sep=0, outer sep=0] {{{}}};".format(
             #    pagewidth,  0, titlename) + "\n\n")
             #f.write(r"\node at ({},{}) [anchor=south,font=\scshape,color=month!70,scale=4,inner sep=0, outer sep=0] {{{}}};".format(
