@@ -50,6 +50,10 @@ class CalendarCreator:
         self.legends = 13 * [None]
         self.legend_options = {}
 
+        self.nweeks_in_line = 3
+
+        self.theme = "light" # "dark"
+
     def set_shiftdict(self, shiftdict):
         self.shiftdict = shiftdict
 
@@ -186,6 +190,8 @@ class CalendarCreator:
             for d in self.days:
                 if d == "So":
                     numstring += r"\color{sunday}"
+                else:
+                    numstring += r"\color{weekday}"
                 numstring += r" \bfseries " + d + " &"
         numstring = numstring[:-1] + r"\\" + "\n"
         numstring += "    "
@@ -205,9 +211,9 @@ class CalendarCreator:
         pos = 0
         for daynum in range(last_day_prev_month-firstoffset+1, last_day_prev_month+1):
             if weekday == "So":
-                numstring += r"\color{sunday!30}"
+                numstring += r"\color{sunday!30!footerbackgroundcolor}"
             else:
-                numstring += r"\color{black!30}"
+                numstring += r"\color{weekday!30!footerbackgroundcolor}"
             numstring += " {} &".format(daynum)
             weekday = self.get_next_weekday(weekday)
 
@@ -215,6 +221,8 @@ class CalendarCreator:
         for daynum in range(1,ndays+1):
             if weekday == "So":
                 numstring += r"\color{sunday}"
+            else:
+                numstring += r"\color{weekday}"
             numstring += r" {} &".format(daynum)
             pos += 1
             weekday = self.get_next_weekday(weekday)
@@ -224,9 +232,9 @@ class CalendarCreator:
 
         for daynum in range(1, nweeks_in_line*7 - pos + 1):
             if weekday == "So":
-                numstring += r"\color{sunday!30}"
+                numstring += r"\color{sunday!30!footerbackgroundcolor}"
             else:
-                numstring += r"\color{black!30}"
+                numstring += r"\color{weekday!30!footerbackgroundcolor}"
             numstring += " {} &".format(daynum)
             weekday = self.get_next_weekday(weekday)
 
@@ -235,6 +243,28 @@ class CalendarCreator:
         numstring += r"  };" + "\n"
         return numstring
 
+    def get_colortheme(self):
+        if self.theme == "light":
+            themetext = """% color theme
+    \colorlet{footerbackgroundcolor}{white}
+    \colorlet{sunday}{blue!50!green}
+    \colorlet{weekday}{black}
+    \colorlet{month}{black} %blue!50!green}
+    \colorlet{title}{white}
+"""
+        elif self.theme == "dark":
+            themetext = """% color theme
+    \colorlet{footerbackgroundcolor}{black}
+    \colorlet{sunday}{blue!50!green}
+    \colorlet{weekday}{white}
+    \colorlet{month}{white} %blue!50!green}
+    \colorlet{title}{white}
+"""
+        else:
+            print("Invalid theme: " + self.theme)
+            exit(1)
+        return themetext
+    
     def get_header(self):
         """Return latex file header.
 
@@ -250,11 +280,8 @@ class CalendarCreator:
     \usepackage[ngerman]{babel}
     \usepackage{csquotes}
     \usepackage{xcolor}
-    \colorlet{sunday}{blue!50!green}
-    \colorlet{month}{blue!50!green}
-    \colorlet{title}{white}
-
     \usetikzlibrary{matrix}
+""" + self.get_colortheme() + r""" 
 
     \begin{document}
 
@@ -459,7 +486,7 @@ class CalendarCreator:
         return pc
 
 
-    def get_monthtext(self, month, page_pos=None, anchor="south east"):
+    def get_monthtext(self, month, year, page_pos=None, anchor="south east"):
         """Get latex text for writing month to calendar page.
 
         Args:
@@ -471,9 +498,10 @@ class CalendarCreator:
         """
         if page_pos is None:
             page_pos = [self.page_width-0.2, 0]
+        monthtext = month + " " + str(year)
         ms = "  %%% get_monthtext\n"
-        ms += r"  \node at ({},{}) [anchor={},font=\scshape,color=month!70,scale=4,inner sep=0, outer sep=0] {{{}}};".format(
-            page_pos[0],  page_pos[1], anchor, month) + "\n\n"
+        ms += r"  \node at ({},{}) [anchor={},font=\scshape,color=month!70!footerbackgroundcolor,scale=4,inner sep=0, outer sep=0] {{{}}};".format(
+            page_pos[0],  page_pos[1], anchor, monthtext) + "\n\n"
         return ms
 
     def create_page(self, year, month, pics):
@@ -570,7 +598,7 @@ class CalendarCreator:
                 exit(1)
 
             if self.footer_over_pic:
-                f.write(r"\fill [white, opacity=0.7] ({},{}) rectangle ({},{});".format(-self.leftmargin, -self.bottommargin, self.page_width+self.rightmargin, self.footerheight) + "\n")
+                f.write(r"\fill [footerbackgroundcolor, opacity=0.7] ({},{}) rectangle ({},{});".format(-self.leftmargin, -self.bottommargin, self.page_width+self.rightmargin, self.footerheight) + "\n")
 
             cit = self.citations[midx]
             if cit is not None:
@@ -580,8 +608,8 @@ class CalendarCreator:
             if leg is not None:
                 f.write(self.create_citation(**leg, options=self.legend_options))
 
-            f.write(self.create_numbering(year, month, 3, [0.7,0], "south west"))
-            f.write(self.get_monthtext(month, [self.page_width-0.2,0], "south east"))
+            f.write(self.create_numbering(year, month, self.nweeks_in_line, [0.7,0], "south west"))
+            f.write(self.get_monthtext(month, year, [self.page_width-0.2,0], "south east"))
 
             f.write(self.get_footer())
 

@@ -178,6 +178,7 @@ if __name__ == "__main__":
     calcreate.set_legends(get_legends(pagewidth), legend_options)
 
     calcreate.footer_over_pic = True
+    calcreate.theme = "light" # "dark"
 
     calcreate.texfolder = "texfiles"
     calcreate.calendar_filename = "calendar.pdf"
