@@ -1,5 +1,4 @@
 #!/usr/bin/python3
-# -*- coding: utf-8 -*-
 
 import os
 import sys
@@ -20,7 +19,7 @@ class CalendarCreator:
                        "August", "September",
                        "Oktober", "November", "Dezember"]
 
-        self.picoptions = ["vertical", "horizontal"]
+        self.picoptions = ["vertical", "horizontal", "=", "||", "||="]
 
         # self.year = datetime.datetime.now().year + 1
         self.texfolder = "texfiles"
@@ -58,7 +57,7 @@ class CalendarCreator:
         self.shiftdict = shiftdict
 
     def set_citations(self, citation_list, citation_options={}):
-        """Set up citation
+        """Set up citation.
 
         Args:
             citation_list: List with 13 citations, where the first one is a citation
@@ -542,7 +541,7 @@ class CalendarCreator:
         else:
             pics_optionless = pics
 
-        print(pics)
+        # print(pics)
         with open(outfile,"w") as f:
             f.write(self.get_header())
             #f.write(get_pics("pic1", "pic2", "pic3", "pic4"))
@@ -554,7 +553,7 @@ class CalendarCreator:
             elif type(pics) is not list:
                 f.write(self.get_pic(pics, [self.page_width/2.0,self.page_height-pic_height/2.0], self.page_width, pic_height, self.leftmargin, self.rightmargin, self.topmargin, bottommargin, shifts))
 
-            elif "vertical" in pics:
+            elif "vertical" in pics or "||" in pics:
                 num_pics = len(pics_optionless)
                 pic_width = self.page_width / num_pics
                 for i in range(num_pics):
@@ -570,16 +569,35 @@ class CalendarCreator:
 
                     f.write(self.get_pic(pics_optionless[i], [pic_width * (i + 0.5), self.page_height-pic_height/2.0], pic_width, pic_height, left_margin_pic, right_margin_pic, self.topmargin, bottommargin, shifts[i]))
 
-            elif len(pics) == 3 and "horizontal" in pics:
-                # top pic
-                f.write(self.get_pic(pics_optionless[0], [self.page_width/2.0,self.page_height-pic_height/4.0], self.page_width, pic_height/2.0, self.leftmargin, self.rightmargin, self.topmargin, self.overlap, shifts[0]))
-                # bottom pic
-                f.write(self.get_pic(pics_optionless[1], [self.page_width/2.0,self.page_height-3.0*pic_height/4.0], self.page_width, pic_height/2.0, self.leftmargin, self.rightmargin,0, bottommargin, shifts[1]))
+            elif "horizontal" in pics or "=" in pics:
+                num_pics = len(pics_optionless)
+                single_pic_height = pic_height / num_pics
+                for i in range(num_pics):
+                    if i == 0:
+                        top_margin_pic = self.topmargin
+                    else:
+                        top_margin_pic = 0.0
 
-            elif len(pics) == 3:
-                print("For printing two pictures you must provide a list where the first entry is 'horizontal' or 'vertical'")
-                exit(1)
+                    if i == num_pics - 1:
+                        bottom_margin_pic = self.bottommargin
+                    else:
+                        bottom_margin_pic = self.overlap
+                    f.write(self.get_pic(pics_optionless[i], [self.page_width/2.0,self.page_height-single_pic_height * (i + 0.5)], self.page_width, single_pic_height, self.leftmargin, self.rightmargin, top_margin_pic, bottom_margin_pic, shifts[i]))
 
+            elif len(pics_optionless) == 4 and "||=" in pics:
+                width_h = 0.45 * self.page_width
+                width_v = (self.page_width - width_h) / 2
+                height_h = pic_height / 2
+                height_v = pic_height
+                # first vertical
+                f.write(self.get_pic(pics_optionless[0], [width_v / 2,self.page_height - 0.5 * pic_height], width_v, height_v, self.leftmargin, self.overlap, self.topmargin, self.bottommargin, shifts[0]))
+                # second vertical
+                f.write(self.get_pic(pics_optionless[1], [width_v * 3 / 2,self.page_height - 0.5 * pic_height], width_v, height_v, 0, self.overlap, self.topmargin, self.bottommargin, shifts[1]))
+                # first horizontal
+                f.write(self.get_pic(pics_optionless[2], [2*width_v + width_h/2,self.page_height - pic_height / 4], width_h, height_h, 0, self.rightmargin, self.topmargin, self.overlap, shifts[2]))
+                # second horizontal
+                f.write(self.get_pic(pics_optionless[3], [2*width_v + width_h/2,self.page_height - pic_height * 3.0 / 4.0], width_h, height_h, 0, self.rightmargin, 0, self.bottommargin, shifts[3]))
+         
             ## Four pictures
             elif len(pics) == 4:
                 # north west pic
